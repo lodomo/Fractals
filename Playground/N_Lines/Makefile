@@ -1,4 +1,4 @@
-PROGRAM = game_of_life
+PROGRAM = n_lines
 CC = cc
 LDFLAGS = -lm -lX11
 TAR_FILE = ${PROGRAM}.tar.gz
