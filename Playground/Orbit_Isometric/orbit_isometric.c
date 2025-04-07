@@ -34,6 +34,7 @@ void updateBody(CelestialBody *body, int direction, double iso_percentage);
 void drawBody(CelestialBody *body);
 void drawSystem(CelestialBody *body);
 void printBody(CelestialBody *body);
+void draw_orbit(CelestialBody *body);
 
 int main() {
     double screen_width, screen_height;
@@ -167,6 +168,8 @@ void drawSystem(CelestialBody *body) {
         drawSystem(body->satellite);
     }
 }
+
+
 
 void printBody(CelestialBody *body) {
     printf("Name: %s\n", body->name);
