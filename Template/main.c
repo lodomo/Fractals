@@ -3,7 +3,7 @@
 int main(void)
 {
     int keydown = 0;
-    G_init_graphics(SCREEN_WIDTH, SCREEN_HEIGHT);
+    G_init_graphics(1000, 1000);
 
     while (keydown != 'q')
     {

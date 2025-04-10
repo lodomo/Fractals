@@ -10,6 +10,7 @@
 #define RIGHT 65363
 #define UP 65362
 #define DOWN 65364
+#define KEY_Q 113
 
 // Color Codes
 #define BLACK 0x000000
@@ -67,6 +68,7 @@ typedef struct Color {
     double v;
 } Color;
 
+// COLOR FUNCTIONS
 Color C_rgb_from_ints(int r, int g, int b);
 Color C_rgb_from_percent(double r, double g, double b);
 Color C_rgb_from_hex(int hex);
@@ -74,9 +76,30 @@ int C_update_hsv(Color *color);
 int C_update_rgb(Color *color);
 int C_print_color(Color *color);
 
-// int U_set_color(Color color);
+int U_set_color(Color color);
 // int U_set_color(char * hex);
 // int U_set_color_rgb(int r, int g, int b);
 // int U_set_color_hsv(int h, int s, int v);
+
+// MATRIX FUNCTIONS
+double ** U_create_matrix2d(double n, double m);
+double ** U_create_sq_matrix(double n);
+void U_free_matrix2d(double **matrix, double n, double m);
+void U_free_sq_matrix(double **matrix, double n);
+
+// User Input
+double U_get_double(char *prompt);
+
+// Handy Structs
+typedef struct Point {
+    double x;
+    double y;
+} Point;
+
+typedef struct Line {
+    Point start;
+    Point end;
+} Line;
+
 
 #endif // LDM_UTILS_H

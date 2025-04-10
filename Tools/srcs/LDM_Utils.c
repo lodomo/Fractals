@@ -1,5 +1,6 @@
 #include "LDM_Utils.h"
 
+// ########## COLORS ##########
 Color C_rgb_from_ints(int r, int g, int b) {
     Color color;
     color.r = r / 255.0;
@@ -135,7 +136,48 @@ int C_print_color(Color *color) {
     printf("RGB (int): (%d, %d, %d)\n", (int)(color->r * 255),
            (int)(color->g * 255), (int)(color->b * 255));
     printf("HSV: (%f, %f, %f)\n", color->h, color->s, color->v);
-    printf("Hex: #%02X%02X%02X\n", (int)(color->r * 255),
-           (int)(color->g * 255), (int)(color->b * 255));
+    printf("Hex: #%02X%02X%02X\n", (int)(color->r * 255), (int)(color->g * 255),
+           (int)(color->b * 255));
     return 1;
+}
+
+int U_set_color(Color color) {
+    return G_rgb(color.r, color.g, color.b);
+}
+
+
+// ########## MATRIX ##########
+double **U_create_matrix2d(double n, double m) {
+    double **matrix = malloc(n * sizeof(double *));
+    for (int i = 0; i < m; ++i) {
+        matrix[i] = malloc(m * sizeof(double));
+    }
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            matrix[i][j] = 0;
+        }
+    }
+
+    return matrix;
+}
+
+double **U_create_sq_matrix(double n) { return U_create_matrix2d(n, n); }
+
+void U_free_matrix2d(double **matrix, double n, double m) {
+    for (int i = 0; i < n; ++i) {
+        free(matrix[i]);
+    }
+    free(matrix);
+}
+
+void U_free_sq_matrix(double **matrix, double n) { U_free_matrix2d(matrix, n, n); }
+
+// ########## USER INPUT ##########
+
+double U_get_double(char *prompt) {
+    double value;
+    printf("%s: ", prompt);
+    scanf("%lf", &value);
+    return value;
 }
