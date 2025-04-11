@@ -1,10 +1,10 @@
 PROGRAM = main
 CC = cc
-LDFLAGS = -lm -lX11 ./srcs/FPT.so
+LDFLAGS = -lm -lX11 ./utils/FPT.so
 
 # Source files and objects
-CSRC = main.c ./srcs/LDM_Utils.c
-HSRC = main.h ./srcs/LDM_Utils.h
+CSRC = main.c ./utils/Utils.c
+HSRC = main.h ./utils/Utils.h
 OBJ = $(CSRC:.c=.o)
 
 # Default target

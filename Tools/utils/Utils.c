@@ -10,7 +10,7 @@ Color U_init_color_rgb_int(int r, int g, int b) {
     color.r = r / 255.0;
     color.g = g / 255.0;
     color.b = b / 255.0;
-    C_hsv_from_rgb(&color);
+    C_update_hsv(&color);
     return color;
 }
 
@@ -23,7 +23,7 @@ Color U_init_color_percent(double r, double g, double b) {
     color.r = r;
     color.g = g;
     color.b = b;
-    C_hsv_from_rgb(&color);
+    C_update_hsv(&color);
     return color;
 }
 
@@ -34,7 +34,7 @@ Color U_init_color_hex(int hex) {
     color.r = ((hex >> 16) & 0xFF) / 255.0;
     color.g = ((hex >> 8) & 0xFF) / 255.0;
     color.b = (hex & 0xFF) / 255.0;
-    C_hsv_from_rgb(&color);
+    C_update_hsv(&color);
     return color;
 }
 
@@ -47,7 +47,7 @@ Color U_init_color_hsv_int(int h, int s, int v) {
     color.h = h / 360.0;
     color.s = s / 100.0;
     color.v = v / 100.0;
-    C_rgb_from_hsv(&color);
+    C_update_rgb(&color);
     return color;
 }
 
@@ -60,7 +60,7 @@ Color U_init_color_hsv_percent(double h, double s, double v) {
     color.h = h;
     color.s = s;
     color.v = v;
-    C_rgb_from_hsv(&color);
+    C_update_rgb(&color);
     return color;
 }
 
@@ -69,16 +69,24 @@ void U_shift_hsv(Color *color, double dh, double ds, double dv) {
         return;
     }
 
-    color->h = fmod(color->h + dh, 1.0);
-    if (color->h < 0) {
-        color->h += 1.0;
-    }
+    color->h = U_wrap_double(color->h + dh, 0.0, 1.0);
     color->s = U_clamp_double(color->s + ds, 0.0, 1.0);
     color->v = U_clamp_double(color->v + dv, 0.0, 1.0);
-    C_rgb_from_hsv(color);
+    C_update_rgb(color);
 }
 
-int C_hsv_from_rgb(Color *color) {
+void U_shift_rgb(Color *color, double dr, double dg, double db) {
+    if (color == NULL) {
+        return;
+    }
+
+    color->r = U_clamp_double(color->r + dr, 0.0, 1.0);
+    color->g = U_clamp_double(color->g + dg, 0.0, 1.0);
+    color->b = U_clamp_double(color->b + db, 0.0, 1.0);
+    C_update_hsv(color);
+}
+
+int C_update_hsv(Color *color) {
     if (color == NULL) {
         return 0;
     }
@@ -125,7 +133,7 @@ int C_hsv_from_rgb(Color *color) {
     return 1;
 }
 
-int C_rgb_from_hsv(Color *color) {
+int C_update_rgb(Color *color) {
     if (color == NULL) {
         return 0;
     }
@@ -194,7 +202,50 @@ int C_print_color(Color *color) {
     return 1;
 }
 
-int U_set_color(Color color) { return G_rgb(color.r, color.g, color.b); }
+int U_set_draw_color(Color color) { return G_rgb(color.r, color.g, color.b); }
+
+int U_set_draw_color_hex(int hex) {
+    Color color = U_init_color_hex(hex);
+    return G_rgb(color.r, color.g, color.b);
+}
+
+// ########## DRAWING AND INPUT ##########
+int U_wait_key() {
+    int p[2];
+    int sig;
+
+    do {
+        sig = Gi_events(p);
+    } while (sig < 0);
+
+    return sig;
+}
+
+int U_wait_click(double p[2]) {
+    int sig;
+    int pi[2];
+
+    do {
+        sig = Gi_events(pi);
+    } while (sig != -3);
+
+    p[0] = pi[0];
+    p[1] = pi[1];
+
+    return sig;
+}
+
+int U_draw_buffer() {
+    if (G_display_image == NULL) {
+        printf("G_display_image is NULL\n");
+        printf("You didn't initialize the graphics system.\n");
+        printf("Run G_init_graphics() first.\n");
+        exit(80085);
+    }
+
+    G_display_image();
+    return 1;
+}
 
 // ########## MATRIX ##########
 double **U_create_matrix2d(double n, double m) {
@@ -236,33 +287,35 @@ double U_get_double(char *prompt) {
 
 // ########## LINE TOOLS ##########
 
-Point U_get_pos_by_percent(Line line, double percentage) {
+Point U_point_pos_by_percent(Point p0, Point p1, double percentage) {
     Point point;
-    point.x = line.start.x + (line.end.x - line.start.x) * percentage;
-    point.y = line.start.y + (line.end.y - line.start.y) * percentage;
+    point.x = p0.x + (p1.x - p0.x) * percentage;
+    point.y = p0.y + (p1.y - p0.y) * percentage;
     return point;
 }
 
+Point U_line_pos_by_percent(Line line, double percentage) {
+    return U_point_pos_by_percent(line.p0, line.p1, percentage);
+}
+
 double U_line_length(Line line) {
-    return sqrt(pow(line.end.x - line.start.x, 2) +
-                pow(line.end.y - line.start.y, 2));
+    return sqrt(pow(line.p1.x - line.p0.x, 2) + pow(line.p1.y - line.p0.y, 2));
 }
 
 double U_get_angle_rad(Line line) {
-    return atan2(line.end.y - line.start.y, line.end.x - line.start.x);
+    return atan2(line.p1.y - line.p0.y, line.p1.x - line.p0.x);
 }
 
 double U_perp_angle(double rads) { return fmod(rads + M_PI / 2, 2 * M_PI); }
 
-Point U_shift_point(Point point, double angle, double distance) {
-    Point new_point;
-    new_point.x = point.x + cos(angle) * distance;
-    new_point.y = point.y + sin(angle) * distance;
-    return new_point;
+int U_shift_point(Point *point, double angle, double distance) {
+    point->x += cos(angle) * distance;
+    point->y += sin(angle) * distance;
+    return 1;
 }
 
 // ########## SHAPE TOOLS ##########
-double U_eq_triangle_height(double base) { return HALF_SQRT_3 * base; }
+double U_eq_triangle_height(double base) { return sqrt(3) / 2 * base; }
 
 // ########## MISC FUNCTIONS ##########
 int U_clamp_int(int value, int min, int max) {
@@ -302,4 +355,3 @@ double U_wrap_double(double value, double min, double max) {
     }
     return value;
 }
-

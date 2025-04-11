@@ -69,6 +69,7 @@
 #define SLASH 47
 #define R_SHIFT 65506
 
+// L_CTRL: G_wait_key > Gi_events > Get_Events_X does not return anything for L_CTRL
 #define L_ALT 65513
 #define SPACE 32
 #define R_ALT 65514

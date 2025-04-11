@@ -6,8 +6,8 @@
 #include <stdlib.h>
 
 // These only have #defines
-#include "Palette.h"        // Colors
-#include "X11_keycodes.h"   // Return signals from X11 keypresses
+#include "Palette.h"      // Colors
+#include "X11_keycodes.h" // Return signals from X11 keypresses
 
 /*
  * Stores colors as RGB and HSV values.
@@ -29,20 +29,24 @@ Color U_init_color_hex(int hex);
 Color U_init_color_hsv_int(int h, int s, int v);
 Color U_init_color_hsv_percent(double h, double s, double v);
 void U_shift_hsv(Color *color, double dh, double ds, double dv);
+void U_shift_rgb(Color *color, double dr, double dg, double db);
 
 // INTERNAL COLOR FUNCTIONS
-int C_hsv_from_rgb(Color *color);
-int C_rgb_from_hsv(Color *color);
+int C_update_hsv(Color *color);
+int C_update_rgb(Color *color);
 int C_print_color(Color *color);
 
-int U_set_color(Color color);
-// int U_set_color(char * hex);
-// int U_set_color_rgb(int r, int g, int b);
-// int U_set_color_hsv(int h, int s, int v);
+int U_set_draw_color(Color color);
+int U_set_draw_color_hex(int hex);
+
+// DRAWING AND INPUT
+int U_wait_key();
+int U_wait_click(double p[2]);
+int U_draw_buffer();
 
 // MATRIX FUNCTIONS
-double ** U_create_matrix2d(double n, double m);
-double ** U_create_sq_matrix(double n);
+double **U_create_matrix2d(double n, double m);
+double **U_create_sq_matrix(double n);
 void U_free_matrix2d(double **matrix, double n, double m);
 void U_free_sq_matrix(double **matrix, double n);
 
@@ -56,15 +60,16 @@ typedef struct Point {
 } Point;
 
 typedef struct Line {
-    Point start;
-    Point end;
+    Point p0;
+    Point p1;
 } Line;
 
-Point U_get_pos_by_percent(Line line, double percentage);
+Point U_point_pos_by_percent(Point p0, Point p1, double percentage);
+Point U_line_pos_by_percent(Line line, double percentage);
 double U_line_length(Line line);
 double U_get_angle_rad(Line line);
 double U_perp_angle(double rads);
-Point U_shift_point(Point p, double angle, double distance);
+int U_shift_point(Point *p, double angle, double distance);
 
 // Shape Tools
 double U_eq_triangle_height(double base);
