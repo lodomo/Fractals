@@ -9,6 +9,14 @@
 #include "Palette.h"      // Colors
 #include "X11_keycodes.h" // Return signals from X11 keypresses
 
+// Clipping Constants
+#define CLIP_INSIDE 0b0000
+#define CLIP_LEFT 0b0001
+#define CLIP_RIGHT 0b0010
+#define CLIP_BOTTOM 0b0100
+#define CLIP_TOP 0b1000
+#define CLIP_OUTSIDE 0b1111
+
 /*
  * Stores colors as RGB and HSV values.
  * All values are in the range of [0.0 to 1.0]
@@ -60,19 +68,28 @@ typedef struct Point {
 } Point;
 
 typedef struct Line {
-    Point p0;
-    Point p1;
+    Point p[2];
 } Line;
+
+typedef struct Box {
+    Point p[2];
+} Box;
 
 Point U_point_pos_by_percent(Point p0, Point p1, double percentage);
 Point U_line_pos_by_percent(Line line, double percentage);
 double U_line_length(Line line);
+double U_distance_two_points(Point p0, Point p1);
 double U_get_angle_rad(Line line);
 double U_perp_angle(double rads);
 int U_shift_point(Point *p, double angle, double distance);
 
 // Shape Tools
 double U_eq_triangle_height(double base);
+
+// Collisions
+typedef int ClipCode;
+ClipCode U_point_intersect_box(Point p, Box box);
+ClipCode U_line_intersect_box(Line line, Box box);
 
 // ######## MISC FUNCTIONS ##########
 int U_clamp_int(int value, int min, int max);

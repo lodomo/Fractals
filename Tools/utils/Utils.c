@@ -295,15 +295,23 @@ Point U_point_pos_by_percent(Point p0, Point p1, double percentage) {
 }
 
 Point U_line_pos_by_percent(Line line, double percentage) {
-    return U_point_pos_by_percent(line.p0, line.p1, percentage);
+    return U_point_pos_by_percent(line.p[0], line.p[1], percentage);
 }
 
 double U_line_length(Line line) {
-    return sqrt(pow(line.p1.x - line.p0.x, 2) + pow(line.p1.y - line.p0.y, 2));
+    return sqrt(pow(line.p[1].x - line.p[0].x, 2) +
+                pow(line.p[1].y - line.p[0].y, 2));
+}
+
+double U_distance_two_points(Point p0, Point p1) {
+    Line line;
+    line.p[0] = p0;
+    line.p[1] = p1;
+    return U_line_length(line);
 }
 
 double U_get_angle_rad(Line line) {
-    return atan2(line.p1.y - line.p0.y, line.p1.x - line.p0.x);
+    return atan2(line.p[1].y - line.p[0].y, line.p[1].x - line.p[0].x);
 }
 
 double U_perp_angle(double rads) { return fmod(rads + M_PI / 2, 2 * M_PI); }
@@ -316,6 +324,54 @@ int U_shift_point(Point *point, double angle, double distance) {
 
 // ########## SHAPE TOOLS ##########
 double U_eq_triangle_height(double base) { return sqrt(3) / 2 * base; }
+
+// ########## COLLISIONS ##########
+ClipCode U_point_intersect_box(Point point, Box box) {
+    ClipCode code = CLIP_INSIDE;
+    double left = fmin(box.p[0].x, box.p[1].x);
+    double right = fmax(box.p[0].x, box.p[1].x);
+    double bottom = fmin(box.p[0].y, box.p[1].y);
+    double top = fmax(box.p[0].y, box.p[1].y);
+
+    if (point.x < left) {
+        code |= CLIP_LEFT;
+    } else if (point.x > right) {
+        code |= CLIP_RIGHT;
+    } else if (point.y < bottom) {
+        code |= CLIP_BOTTOM;
+    } else if (point.y > top) {
+        code |= CLIP_TOP;
+    }
+
+    return code;
+}
+
+ClipCode U_line_intersect_box(Line line, Box box) {
+    ClipCode code[2];
+    code[0] = U_point_intersect_box(line.p[0], box);
+    code[1] = U_point_intersect_box(line.p[1], box);
+
+    // If either point is inside the box, return CLIP_INSIDE
+    for (int i = 0; i < 2; ++i) {
+        if (code[i] == CLIP_INSIDE) {
+            return CLIP_INSIDE;
+        }
+    }
+
+    // If both points are inside the same box, return CLIP_OUTSIDE
+    if (code[0] == code[1]) {
+        return CLIP_OUTSIDE;
+    }
+
+    // If both points are to the top, bottom, left or right, return the code
+    ClipCode clip_and = code[0] & code[1];
+    if (clip_and == CLIP_LEFT || clip_and == CLIP_RIGHT ||
+        clip_and == CLIP_TOP || clip_and == CLIP_BOTTOM) {
+        return clip_and;
+    }
+
+    return CLIP_INSIDE;
+}
 
 // ########## MISC FUNCTIONS ##########
 int U_clamp_int(int value, int min, int max) {
