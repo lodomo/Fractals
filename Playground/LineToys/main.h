@@ -6,6 +6,4 @@
 #define SCREEN_WIDTH 1000
 #define SCREEN_HEIGHT 1000
 
-void koch_curve(Line line, int depth);
-
 #endif // MAIN_H

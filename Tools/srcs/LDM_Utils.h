@@ -54,6 +54,12 @@
 #define SM32_WHITE 0xf2f2f0
 #define SM32_BLACK 0x23213d
 
+// Useful Constants
+
+#define SQRT_2 1.4142135623730951
+#define SQRT_3 1.7320508075688772
+#define HALF_SQRT_3 0.8660254037844387
+
 
 /*
  * Stores colors as RGB and HSV values.
@@ -90,7 +96,7 @@ void U_free_sq_matrix(double **matrix, double n);
 // User Input
 double U_get_double(char *prompt);
 
-// Handy Structs
+// Line Tools
 typedef struct Point {
     double x;
     double y;
@@ -100,6 +106,15 @@ typedef struct Line {
     Point start;
     Point end;
 } Line;
+
+Point U_get_pos_by_percent(Line line, double percentage);
+double U_line_length(Line line);
+double U_get_angle_rad(Line line);
+double U_perp_angle(double rads);
+Point U_shift_point(Point p, double angle, double distance);
+
+// Shape Tools
+double U_eq_triangle_height(double base);
 
 
 #endif // LDM_UTILS_H

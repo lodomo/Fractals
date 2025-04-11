@@ -1,31 +1,84 @@
-#include "LDM_Utils.h"
+#include "Utils.h"
 
 // ########## COLORS ##########
-Color C_rgb_from_ints(int r, int g, int b) {
+Color U_init_color_rgb_int(int r, int g, int b) {
+    r = U_clamp_int(r, 0, 255);
+    g = U_clamp_int(g, 0, 255);
+    b = U_clamp_int(b, 0, 255);
+
     Color color;
     color.r = r / 255.0;
     color.g = g / 255.0;
     color.b = b / 255.0;
+    C_hsv_from_rgb(&color);
     return color;
 }
 
-Color C_rgb_from_percent(double r, double g, double b) {
+Color U_init_color_percent(double r, double g, double b) {
+    r = U_clamp_double(r, 0.0, 1.0);
+    g = U_clamp_double(g, 0.0, 1.0);
+    b = U_clamp_double(b, 0.0, 1.0);
+
     Color color;
     color.r = r;
     color.g = g;
     color.b = b;
+    C_hsv_from_rgb(&color);
     return color;
 }
 
-Color C_rgb_from_hex(int hex) {
+Color U_init_color_hex(int hex) {
+    hex = U_clamp_int(hex, 0x000000, 0xFFFFFF);
+
     Color color;
     color.r = ((hex >> 16) & 0xFF) / 255.0;
     color.g = ((hex >> 8) & 0xFF) / 255.0;
     color.b = (hex & 0xFF) / 255.0;
+    C_hsv_from_rgb(&color);
     return color;
 }
 
-int C_update_hsv(Color *color) {
+Color U_init_color_hsv_int(int h, int s, int v) {
+    h = U_clamp_int(h, 0, 360);
+    s = U_clamp_int(s, 0, 100);
+    v = U_clamp_int(v, 0, 100);
+
+    Color color;
+    color.h = h / 360.0;
+    color.s = s / 100.0;
+    color.v = v / 100.0;
+    C_rgb_from_hsv(&color);
+    return color;
+}
+
+Color U_init_color_hsv_percent(double h, double s, double v) {
+    h = U_clamp_double(h, 0.0, 1.0);
+    s = U_clamp_double(s, 0.0, 1.0);
+    v = U_clamp_double(v, 0.0, 1.0);
+
+    Color color;
+    color.h = h;
+    color.s = s;
+    color.v = v;
+    C_rgb_from_hsv(&color);
+    return color;
+}
+
+void U_shift_hsv(Color *color, double dh, double ds, double dv) {
+    if (color == NULL) {
+        return;
+    }
+
+    color->h = fmod(color->h + dh, 1.0);
+    if (color->h < 0) {
+        color->h += 1.0;
+    }
+    color->s = U_clamp_double(color->s + ds, 0.0, 1.0);
+    color->v = U_clamp_double(color->v + dv, 0.0, 1.0);
+    C_rgb_from_hsv(color);
+}
+
+int C_hsv_from_rgb(Color *color) {
     if (color == NULL) {
         return 0;
     }
@@ -72,7 +125,7 @@ int C_update_hsv(Color *color) {
     return 1;
 }
 
-int C_update_rgb(Color *color) {
+int C_rgb_from_hsv(Color *color) {
     if (color == NULL) {
         return 0;
     }
@@ -141,10 +194,7 @@ int C_print_color(Color *color) {
     return 1;
 }
 
-int U_set_color(Color color) {
-    return G_rgb(color.r, color.g, color.b);
-}
-
+int U_set_color(Color color) { return G_rgb(color.r, color.g, color.b); }
 
 // ########## MATRIX ##########
 double **U_create_matrix2d(double n, double m) {
@@ -171,7 +221,9 @@ void U_free_matrix2d(double **matrix, double n, double m) {
     free(matrix);
 }
 
-void U_free_sq_matrix(double **matrix, double n) { U_free_matrix2d(matrix, n, n); }
+void U_free_sq_matrix(double **matrix, double n) {
+    U_free_matrix2d(matrix, n, n);
+}
 
 // ########## USER INPUT ##########
 
@@ -200,9 +252,7 @@ double U_get_angle_rad(Line line) {
     return atan2(line.end.y - line.start.y, line.end.x - line.start.x);
 }
 
-double U_perp_angle(double rads) {
-    return fmod(rads + M_PI / 2, 2 * M_PI);
-}
+double U_perp_angle(double rads) { return fmod(rads + M_PI / 2, 2 * M_PI); }
 
 Point U_shift_point(Point point, double angle, double distance) {
     Point new_point;
@@ -212,7 +262,44 @@ Point U_shift_point(Point point, double angle, double distance) {
 }
 
 // ########## SHAPE TOOLS ##########
+double U_eq_triangle_height(double base) { return HALF_SQRT_3 * base; }
 
-double U_eq_triangle_height(double base) {
-    return HALF_SQRT_3 * base;
+// ########## MISC FUNCTIONS ##########
+int U_clamp_int(int value, int min, int max) {
+    if (value < min) {
+        return min;
+    } else if (value > max) {
+        return max;
+    }
+    return value;
 }
+
+double U_clamp_double(double value, double min, double max) {
+    if (value < min) {
+        return min;
+    } else if (value > max) {
+        return max;
+    }
+    return value;
+}
+
+int U_wrap_int(int value, int min, int max) {
+    int range = max - min;
+    if (value < min) {
+        return max - ((min - value) % range);
+    } else if (value > max) {
+        return min + ((value - max) % range);
+    }
+    return value;
+}
+
+double U_wrap_double(double value, double min, double max) {
+    double range = max - min;
+    if (value < min) {
+        return max - fmod(min - value, range);
+    } else if (value > max) {
+        return min + fmod(value - max, range);
+    }
+    return value;
+}
+
