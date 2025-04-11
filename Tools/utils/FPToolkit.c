@@ -32,6 +32,7 @@ an int if the function was declared to do so
 // open the display with "MAGIC" instad of "\0"
 
 
+
 					    
 /* Version 101 :					    
 

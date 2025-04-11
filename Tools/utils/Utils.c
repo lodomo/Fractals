@@ -298,21 +298,19 @@ Point U_line_pos_by_percent(Line line, double percentage) {
     return U_point_pos_by_percent(line.p[0], line.p[1], percentage);
 }
 
-double U_line_length(Line line) {
-    return sqrt(pow(line.p[1].x - line.p[0].x, 2) +
-                pow(line.p[1].y - line.p[0].y, 2));
-}
-
 double U_distance_two_points(Point p0, Point p1) {
-    Line line;
-    line.p[0] = p0;
-    line.p[1] = p1;
-    return U_line_length(line);
+    return sqrt(pow(p1.x - p0.x, 2) + pow(p1.y - p0.y, 2));
 }
 
-double U_get_angle_rad(Line line) {
-    return atan2(line.p[1].y - line.p[0].y, line.p[1].x - line.p[0].x);
+double U_line_length(Line line) {
+    return U_distance_two_points(line.p[0], line.p[1]);
 }
+
+double U_point_angle(Point p0, Point p1) {
+    return atan2(p1.y - p0.y, p1.x - p0.x);
+}
+
+double U_line_angle(Line line) { return U_point_angle(line.p[0], line.p[1]); }
 
 double U_perp_angle(double rads) { return fmod(rads + M_PI / 2, 2 * M_PI); }
 
@@ -322,10 +320,27 @@ int U_shift_point(Point *point, double angle, double distance) {
     return 1;
 }
 
+int U_scale_point(Point origin, Point *point, double scale) {
+    Point new_point;
+    new_point = U_point_pos_by_percent(origin, *point, scale);
+    point->x = new_point.x;
+    point->y = new_point.y;
+    return 1;
+}
+
+int U_scale_line(Line origin, Line *line, double scale) {
+    Point new_p0 = U_point_pos_by_percent(origin.p[0], line->p[0], scale);
+    Point new_p1 = U_point_pos_by_percent(origin.p[1], line->p[1], scale);
+    line->p[0] = new_p0;
+    line->p[1] = new_p1;
+    return 1;
+}
+
 // ########## SHAPE TOOLS ##########
 double U_eq_triangle_height(double base) { return sqrt(3) / 2 * base; }
 
 // ########## COLLISIONS ##########
+
 ClipCode U_point_intersect_box(Point point, Box box) {
     ClipCode code = CLIP_INSIDE;
     double left = fmin(box.p[0].x, box.p[1].x);
@@ -337,7 +352,9 @@ ClipCode U_point_intersect_box(Point point, Box box) {
         code |= CLIP_LEFT;
     } else if (point.x > right) {
         code |= CLIP_RIGHT;
-    } else if (point.y < bottom) {
+    }
+
+    if (point.y < bottom) {
         code |= CLIP_BOTTOM;
     } else if (point.y > top) {
         code |= CLIP_TOP;
@@ -351,26 +368,36 @@ ClipCode U_line_intersect_box(Line line, Box box) {
     code[0] = U_point_intersect_box(line.p[0], box);
     code[1] = U_point_intersect_box(line.p[1], box);
 
-    // If either point is inside the box, return CLIP_INSIDE
-    for (int i = 0; i < 2; ++i) {
-        if (code[i] == CLIP_INSIDE) {
+    //  Easy Outs:
+    //  If both points are opposite sides, SUCCESS.
+    //  Now we need linear interpolation to see if the line intersects the box.
+
+    // If either point is inside the box, SUCCESS
+    if (code[0] == CLIP_INSIDE || code[1] == CLIP_INSIDE) {
+        return CLIP_INSIDE;
+    }
+
+    // If both points are either left or right, or top or bottom, FAIL.
+    if (code[0] & code[1]) {
+        return code[0] & code[1];
+    }
+
+    // If points are on opposite sides, SUCCESS.
+    if ((code[0] | code[1]) == CLIP_ALL) {
+        return CLIP_INSIDE;
+    }
+
+    double line_length = U_line_length(line);
+    double check_step = 1.0 / line_length;
+    for (double i = 0; i < line_length; i += check_step) {
+        Point check_point = U_line_pos_by_percent(line, i);
+        ClipCode check_code = U_point_intersect_box(check_point, box);
+        if (check_code == CLIP_INSIDE) {
             return CLIP_INSIDE;
         }
     }
 
-    // If both points are inside the same box, return CLIP_OUTSIDE
-    if (code[0] == code[1]) {
-        return CLIP_OUTSIDE;
-    }
-
-    // If both points are to the top, bottom, left or right, return the code
-    ClipCode clip_and = code[0] & code[1];
-    if (clip_and == CLIP_LEFT || clip_and == CLIP_RIGHT ||
-        clip_and == CLIP_TOP || clip_and == CLIP_BOTTOM) {
-        return clip_and;
-    }
-
-    return CLIP_INSIDE;
+    return CLIP_FAIL;
 }
 
 // ########## MISC FUNCTIONS ##########

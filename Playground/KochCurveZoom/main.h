@@ -6,6 +6,6 @@
 #define SCREEN_WIDTH 1000
 #define SCREEN_HEIGHT 1000
 
-int koch_curve(Color color, Line * line, int depth, Box draw_boundary);
+int koch_curve(Color color, Line * line, Box draw_boundary);
 
 #endif // MAIN_H
