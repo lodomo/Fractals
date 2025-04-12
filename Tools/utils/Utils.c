@@ -328,16 +328,30 @@ int U_scale_point(Point origin, Point *point, double scale) {
     return 1;
 }
 
-int U_scale_line(Line origin, Line *line, double scale) {
-    Point new_p0 = U_point_pos_by_percent(origin.p[0], line->p[0], scale);
-    Point new_p1 = U_point_pos_by_percent(origin.p[1], line->p[1], scale);
+int U_scale_line(Point origin, Line *line, double scale) {
+    Point new_p0 = U_point_pos_by_percent(origin, line->p[0], scale);
+    Point new_p1 = U_point_pos_by_percent(origin, line->p[1], scale);
     line->p[0] = new_p0;
     line->p[1] = new_p1;
     return 1;
 }
 
 // ########## SHAPE TOOLS ##########
-double U_eq_triangle_height(double base) { return sqrt(3) / 2 * base; }
+double U_eq_triangle_height(double base) { return 0.5 * sqrt(3) * base; }
+
+Box U_gen_box_by_size(Point origin, double width, double height) {
+    Box box;
+    box.p[0].x = origin.x;
+    box.p[0].y = origin.y;
+    box.p[1].x = origin.x + width;
+    box.p[1].y = origin.y + height;
+    return box;
+}
+
+void U_print_box(Box box) {
+    printf("Box: (%f, %f) - (%f, %f)\n", box.p[0].x, box.p[0].y,
+           box.p[1].x, box.p[1].y);
+}
 
 // ########## COLLISIONS ##########
 

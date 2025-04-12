@@ -9,6 +9,9 @@
 #include "Palette.h"      // Colors
 #include "X11_keycodes.h" // Return signals from X11 keypresses
 
+#define TRUE 1
+#define FALSE 0
+
 // Clipping Codes
 #define CLIP_INSIDE 0b0000
 #define CLIP_LEFT 0b0001
@@ -94,10 +97,12 @@ double U_perp_angle(double rads);
 
 int U_shift_point(Point *point, double angle, double distance);
 int U_scale_point(Point origin, Point *point, double scale);
-int U_scale_line(Line origin, Line *line, double scale);
+int U_scale_line(Point origin, Line *line, double scale);
 
 // Shape Tools
 double U_eq_triangle_height(double base);
+Box U_gen_box_by_size(Point origin, double width, double height);
+void U_print_box(Box box);
 
 // Collisions
 ClipCode U_point_intersect_box(Point p, Box box);
