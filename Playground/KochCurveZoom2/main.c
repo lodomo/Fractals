@@ -32,7 +32,7 @@ int main(void) {
         U_shift_hsv(&background_color, 0.001, 0, 0);
         G_clear();
         U_set_draw_color_hex(SM32_RED);
-        U_shift_hsv(&draw_color, 0.001, 0, 0);
+        U_shift_hsv(&draw_color, 0.01, 0, 0);
         for (int i = 0; i < 4; i++){
             koch_curve(draw_color, &lines[i], draw_boundary, TRUE);
         }

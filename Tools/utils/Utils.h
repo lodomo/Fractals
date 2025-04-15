@@ -84,6 +84,10 @@ typedef struct Box {
     Point p[2];
 } Box;
 
+typedef struct Triangle {
+    Point p[3];
+} Triangle;
+
 Point U_point_pos_by_percent(Point p0, Point p1, double percentage);
 Point U_line_pos_by_percent(Line line, double percentage);
 
