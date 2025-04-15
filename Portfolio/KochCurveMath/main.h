@@ -13,6 +13,9 @@ typedef struct KochCurve {
 KochCurve init_curve(Line * line);
 int draw_curve(KochCurve * curve);
 
+int koch_by_depth(Line * line, int depth);
+int koch_by_length(Line * line, double length);
+
 
 
 #endif // MAIN_H

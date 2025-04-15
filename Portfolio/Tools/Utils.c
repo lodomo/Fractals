@@ -208,17 +208,28 @@ int U_draw_buffer() {
     return 1;
 }
 
-int U_draw_dotted_line(Color * color, Line *line) {
+int U_draw_line(Line *line, double weight) {
     int pixel_length = (int)U_length(line);
     double pixels_per_percent = pixel_length / 100.0;
-    const int dot_length = 10;
+    weight /= 2.0;
+
+    for (int i = 0; i < pixel_length; ++i) {
+        Point point = U_lerp_line(line, (double)i / (double)pixel_length);
+        G_fill_circle(point.x, point.y, weight);
+    }
+    return 1;
+}
+
+int U_draw_dotted_line(Line *line, double weight, int dot_length) {
+    int pixel_length = (int)U_length(line);
+    double pixels_per_percent = pixel_length / 100.0;
+    weight /= 2.0;
     int draw = TRUE;
-    U_set_color(color);
 
     for (int i = 0; i < pixel_length; ++i) {
         if (draw) {
             Point point = U_lerp_line(line, (double)i / (double)pixel_length);
-            G_point(point.x, point.y);
+            G_fill_circle(point.x, point.y, weight);
         }
 
         if (i % dot_length == 0) {
@@ -435,6 +446,29 @@ void U_print_box(Box box) {
            box.p[1].y);
 }
 
+/**
+ * Treat a line as a triangle and find the right angle point.
+ */
+Point U_right_angle(Line *hypotenuse) {
+    Point point;
+    point.x = hypotenuse->p[0].x;
+    point.y = hypotenuse->p[1].y;
+    return point;
+}
+
+/**
+ * Treat a line as a triangle and find the right angle point.
+ * Follow the line in reverse
+ */
+Point U_right_angle_reverse(Line *hypotenuse) {
+    Line reverse;
+    reverse.p[0].x = hypotenuse->p[1].x;
+    reverse.p[0].y = hypotenuse->p[1].y;
+    reverse.p[1].x = hypotenuse->p[0].x;
+    reverse.p[1].y = hypotenuse->p[0].y;
+    return U_right_angle(&reverse);
+}
+
 // ########## COLLISIONS ##########
 
 /**
@@ -442,7 +476,7 @@ void U_print_box(Box box) {
  * Uses the Cohen-Sutherland algorithm
  * https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
  */
-ClipCode U_point_intersect_box(Point * point, Box * box) {
+ClipCode U_point_intersect_box(Point *point, Box *box) {
     ClipCode code = CLIP_INSIDE;
     double left = fmin(box->p[0].x, box->p[1].x);
     double right = fmax(box->p[0].x, box->p[1].x);
@@ -469,7 +503,7 @@ ClipCode U_point_intersect_box(Point * point, Box * box) {
  * Uses the Cohen-Sutherland algorithm
  * https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
  */
-ClipCode U_line_intersect_box(Line * line, Box * box) {
+ClipCode U_line_intersect_box(Line *line, Box *box) {
     ClipCode code[2];
     code[0] = U_point_intersect_box(&line->p[0], box);
     code[1] = U_point_intersect_box(&line->p[1], box);

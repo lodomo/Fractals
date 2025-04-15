@@ -60,7 +60,6 @@ typedef struct Triangle {
     Point p[3];
 } Triangle;
 
-
 // ########## COLORS AND DRAWING ##########
 Color U_color_hex(int hex);
 int U_shift_hsv(Color *io_color, double dh, double ds, double dv);
@@ -71,11 +70,12 @@ int C_update_hsv(Color *io_color);
 int C_update_rgb(Color *io_color);
 
 int U_print_color(Color *io_color);
-int U_set_color(Color * color);
+int U_set_color(Color *color);
 int U_set_color_hex(int hex);
 int U_draw_buffer();
 
-int U_draw_dotted_line(Color * color, Line *line);
+int U_draw_line(Line *line, double weight);
+int U_draw_dotted_line(Line *line, double weight, int dot_length);
 
 // ########### INPUT ##########
 int U_wait_key();
@@ -90,27 +90,29 @@ void U_free_matrix2d(double **matrix, double n, double m);
 void U_free_sq_matrix(double **matrix, double n);
 
 // ########## LINE FUNCTIONS ##########
-Point U_lerp(Point * p0, Point * p1, double percentage);
-Point U_lerp_line(Line * line, double percentage);
-double U_distance(Point * p0, Point * p1);
-double U_length(Line * line);
-double U_angle(Point * p0, Point * p1);
-double U_angle_line(Line * line);
+Point U_lerp(Point *p0, Point *p1, double percentage);
+Point U_lerp_line(Line *line, double percentage);
+double U_distance(Point *p0, Point *p1);
+double U_length(Line *line);
+double U_angle(Point *p0, Point *p1);
+double U_angle_line(Line *line);
 int U_lerp_perp(Point *output, Point *p0, Point *p1, double ratio);
 double U_perp_angle(double rads);
 
 int U_shift_point(Point *io_point, double angle, double distance);
-int U_scale_point(Point *io_point, Point * origin, double scale);
+int U_scale_point(Point *io_point, Point *origin, double scale);
 int U_scale_line(Line *io_line, Point *origin, double scale);
 
 // ########## LINE FUNCTIONS ##########
 double U_eq_triangle_height(double base);
-Box U_gen_box_by_size(Point * origin, double width, double height);
+Box U_gen_box_by_size(Point *origin, double width, double height);
 void U_print_box(Box box);
+Point U_right_angle(Line *hypotenuse);
+Point U_right_angle_reverse(Line *hypotenuse);
 
 // Collisions
-ClipCode U_point_intersect_box(Point * point, Box * box);
-ClipCode U_line_intersect_box(Line * line, Box * box);
+ClipCode U_point_intersect_box(Point *point, Box *box);
+ClipCode U_line_intersect_box(Line *line, Box *box);
 
 // ######## MISC FUNCTIONS ##########
 int U_clamp_int(int value, int min, int max);
