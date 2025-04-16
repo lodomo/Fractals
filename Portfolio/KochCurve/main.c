@@ -1,16 +1,20 @@
 #include "main.h"
 
 int main(void) {
+    char title[50];
+    sprintf(title, "KochCurve");
+    int frame = 0;
+
     int keydown = 0;
     Color color = U_color_hex(SM32_GRAY);
     G_init_graphics(SCREEN_WIDTH, SCREEN_HEIGHT);
     U_set_color_hex(SM32_BLACK);
 
     Box draw_boundary;
-    draw_boundary.p[0].x = 0;
-    draw_boundary.p[0].y = 0;
-    draw_boundary.p[1].x = SCREEN_WIDTH;
-    draw_boundary.p[1].y = SCREEN_HEIGHT;
+    draw_boundary.p[0].x = -500;
+    draw_boundary.p[0].y = -500;
+    draw_boundary.p[1].x = SCREEN_WIDTH + 500;
+    draw_boundary.p[1].y = SCREEN_HEIGHT + 500;
 
     Line start_line;
     start_line.p[0].x = 200;
@@ -24,7 +28,7 @@ int main(void) {
     U_set_color_hex(SM32_BLACK);
     G_clear();
 
-    paint_math(&start_line);
+    paint_math(&start_line, &frame);
 
     for (int i = 2; i < 7; i++) {
         U_scale_line(&start_line, &base_curve.p[2], 1.05);
@@ -97,7 +101,7 @@ int draw_curve(KochCurve *curve) {
     return 1;
 }
 
-int paint_math(Line *line) {
+int paint_math(Line *line, int *frame) {
     int keydown = 0;
     double line_weight = 2.0;
     KochCurve first_curve = init_curve(line);

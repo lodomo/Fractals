@@ -1,7 +1,7 @@
 # Paradigms For Fractals
 
 ## Recursive
-Koch Curve
+Koch Curve - DONE!
 Pythagoras Tree
 
 ## Lindenmayer Systems (L-Systems)
