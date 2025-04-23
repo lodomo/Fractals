@@ -15,6 +15,7 @@ typedef struct Production {
 int find_rule(char s);
 void string_builder();
 void string_interpreter();
+void autoplacer(int swidth, int sheight);
 
 void square_wave();
 void sierpinski();

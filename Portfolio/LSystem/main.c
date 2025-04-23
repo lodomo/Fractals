@@ -10,7 +10,7 @@ Point TURTLE;
 
 double START_ANGLE = 0.5 * M_PI;
 double DELTA_ANGLE = 0.5 * M_PI;
-double FORWARD_LENGTH = 10;
+double FORWARD_LENGTH = 1;
 
 int main(void) {
     int keydown = 0;
@@ -23,6 +23,7 @@ int main(void) {
     square_wave();
     //  plant() ;
     string_builder();
+    autoplacer(SCREEN_WIDTH, SCREEN_HEIGHT);
     string_interpreter();
 
     return EXIT_SUCCESS;
@@ -44,20 +45,21 @@ void square_wave() {
     rule_num++;
 }
 
-void sierpinski() {
-    START_ANGLE = 0;
-    DELTA_ANGLE = 2 * M_PI / 3;
+void fern() {
+    START_ANGLE = -1 * M_PI / 180 * 25;
+    DELTA_ANGLE = M_PI / 180 * 25;
 
     strcpy(prd[rule_num].axiom, "A");
     rule_num++;
 
     prd[rule_num].var = 'A';
-    strcpy(prd[rule_num].rule, "B-f-B");
+    strcpy(prd[rule_num].rule, "f-[[A]+A]+f+[A]-A");
     rule_num++;
-    prd[rule_num].var = 'B';
-    strcpy(prd[rule_num].rule, "A+f+A");
-    rule_num++;
+
+    prd[rule_num].var = 'f';
+    strcpy(prd[rule_num].rule, "f");
 }
+
 
 int find_rule(char s) {
     int k;
@@ -100,7 +102,7 @@ void string_builder() {
     }
 }
 
-void autoplacer(int swidth, int sheight, double *p) {
+void autoplacer(int swidth, int sheight) {
     double left = 0;
     double right = 0;
     double top = 0;
@@ -141,6 +143,20 @@ void autoplacer(int swidth, int sheight, double *p) {
     double width = right - left;
     double height = top - bottom;
 
+    double scale_x = (double)swidth / width;
+    double scale_y = (double)sheight / height;
+    double scale = scale_x;
+    if (scale_y < scale_x) {
+        scale = scale_y;
+    }
+    scale = scale * 0.9; // Add some padding
+    double offset_x = (swidth - width * scale) / 2;
+    double offset_y = (sheight - height * scale) / 2;
+
+    // Adjust the turtle's position and scale
+    TURTLE.x = left * scale + offset_x;
+    TURTLE.y = bottom * scale + offset_y;
+    FORWARD_LENGTH *= scale;
 }
 
 void string_interpreter() {
