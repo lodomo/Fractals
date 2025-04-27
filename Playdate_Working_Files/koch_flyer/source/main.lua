@@ -36,10 +36,46 @@ local TICKS = 0
 local SHRINKING = false
 local STARS = {}
 
+-- THE SHIP!
+local SHIP_TILES = pdgfx.imagetable.new("images/ship")
+local SHIP_POSITION = { x = 200, y = 120 }
+local SHIP_PADDING = 30
+local SHIP_BOUNDS = {
+    x1 = SHIP_PADDING,
+    y1 = SHIP_PADDING,
+    x2 = MAX_X - SHIP_PADDING,
+    y2 = MAX_Y - SHIP_PADDING
+}
+local SHIP_PARTICLES = {}
+
+-- Music
+local music = pd.sound.sampleplayer.new("sounds/themoon.wav")
+music:play()
+
 local function init()
     pdgfx.setClipRect(0, 0, 400, 240)
     SCALE_POINT_X, SCALE_POINT_Y = GenMiddle(START_X, START_Y, END_X, END_Y)
     STARS = GenerateStars()
+
+    if SCALE_POINT_X > 200 then
+        START_X = START_X - (SCALE_POINT_X - 200)
+        END_X = END_X - (SCALE_POINT_X - 200)
+        SCALE_POINT_X = 200
+    elseif SCALE_POINT_X < 200 then
+        START_X = START_X + (200 - SCALE_POINT_X)
+        END_X = END_X + (200 - SCALE_POINT_X)
+        SCALE_POINT_X = 200
+    end
+
+    if SCALE_POINT_Y > 120 then
+        START_Y = START_Y - (SCALE_POINT_Y - 120)
+        END_Y = END_Y - (SCALE_POINT_Y - 120)
+        SCALE_POINT_Y = 120
+    elseif SCALE_POINT_Y < 120 then
+        START_Y = START_Y + (120 - SCALE_POINT_Y)
+        END_Y = END_Y + (120 - SCALE_POINT_Y)
+        SCALE_POINT_Y = 120
+    end
 end
 
 --[[
@@ -226,11 +262,58 @@ function ScaleStars(stars, scale)
         star.y = Lerp(120, star.y, scale)
 
         -- If the star is out of bounds or too close to the middle
-        if star.x > MAX_X or star.y > MAX_Y or star.x < 0 or star.y < 0 or
+        if star.x > 650 or star.y > 650 or star.x < -250 or star.y < -250 or
             (math.abs(star.x - 200) < 10 and
                 math.abs(star.y - 120) < 10) then
             star.x = math.random(0, MAX_X)
             star.y = math.random(0, MAX_Y)
+        end
+    end
+end
+
+function RotateStars(stars, angle)
+    local cos = math.cos(angle)
+    local sin = math.sin(angle)
+
+    for _, star in ipairs(stars) do
+        local x = star.x - 200
+        local y = star.y - 120
+
+        star.x = x * cos - y * sin + 200
+        star.y = x * sin + y * cos + 120
+    end
+end
+
+function DrawShip()
+    local x_index = SHIP_POSITION.x // (400 / 3) + 1
+    local y_index = SHIP_POSITION.y // (240 / 3) + 1
+    SHIP_TILES:getImage(x_index, y_index):drawCentered(SHIP_POSITION.x, SHIP_POSITION.y)
+end
+
+function ShipParticles()
+    -- 10 Percent change a particle spawns at origin
+    local x = SHIP_POSITION.x + math.random(-10, 10)
+    local y = SHIP_POSITION.y + math.random(-10, 10)
+    table.insert(SHIP_PARTICLES, { x = x, y = y, age = 0 })
+
+    for i = #SHIP_PARTICLES, 1, -1 do
+        local particle = SHIP_PARTICLES[i]
+        particle.age = particle.age + 1
+
+        if particle.age > 50 then
+            table.remove(SHIP_PARTICLES, i)
+        else
+            pdgfx.setColor(pdgfx.kColorWhite)
+            particle.x = particle.x + math.random(-1, 1)
+            particle.y = particle.y + math.random(-1, 1)
+            local x_offset = Lerp(200, SHIP_POSITION.x, 1) - 200
+            local y_offset = Lerp(120, SHIP_POSITION.y, 1) - 120
+            local magnitude = math.sqrt((x_offset * x_offset) + (y_offset * y_offset))
+            x_offset = x_offset / magnitude * 3
+            y_offset = y_offset / magnitude * 3
+            particle.x = particle.x + x_offset
+            particle.y = particle.y + y_offset
+            pdgfx.fillRect(particle.x, particle.y, 2 + particle.age / 5, 2 + particle.age / 5)
         end
     end
 end
@@ -261,6 +344,7 @@ function pd.update()
         START_Y = x1 * sin + y1 * cos + SCALE_POINT_Y
         END_X = x2 * cos - y2 * sin + SCALE_POINT_X
         END_Y = x2 * sin + y2 * cos + SCALE_POINT_Y
+        RotateStars(STARS, 0.25 * angle)
     end
 
     scale = scale + (1 * TICKS / 360)
@@ -269,54 +353,36 @@ function pd.update()
     -- Handle shifting the line, and keep the line in bounds
     --]]
     if LEFT_DOWN then
-        START_X = START_X - INPUT_SHIFT
-        END_X = END_X - INPUT_SHIFT
-        SCALE_POINT_X = SCALE_POINT_X - INPUT_SHIFT
-
-        if (SCALE_POINT_X < 0) then
-            local small_shift = -SCALE_POINT_X
-            START_X = START_X + small_shift
-            END_X = END_X + small_shift
-            SCALE_POINT_X = 0
+        SHIP_POSITION.x = SHIP_POSITION.x - INPUT_SHIFT
+        if SHIP_POSITION.x < SHIP_BOUNDS.x1 then
+            SHIP_POSITION.x = SHIP_BOUNDS.x1
+        end
+        if SHIP_POSITION.x > SHIP_BOUNDS.x2 then
+            SHIP_POSITION.x = SHIP_BOUNDS.x2
         end
     end
 
     if RIGHT_DOWN then
-        START_X = START_X + INPUT_SHIFT
-        END_X = END_X + INPUT_SHIFT
-        SCALE_POINT_X = SCALE_POINT_X + INPUT_SHIFT
-
-        if (SCALE_POINT_X > MAX_X) then
-            local small_shift = SCALE_POINT_X - MAX_X
-            START_X = START_X - small_shift
-            END_X = END_X - small_shift
-            SCALE_POINT_X = MAX_X
+        SHIP_POSITION.x = SHIP_POSITION.x + INPUT_SHIFT
+        if SHIP_POSITION.x < SHIP_BOUNDS.x1 then
+            SHIP_POSITION.x = SHIP_BOUNDS.x1
+        end
+        if SHIP_POSITION.x > SHIP_BOUNDS.x2 then
+            SHIP_POSITION.x = SHIP_BOUNDS.x2
         end
     end
 
     if UP_DOWN then
-        START_Y = START_Y - INPUT_SHIFT
-        END_Y = END_Y - INPUT_SHIFT
-        SCALE_POINT_Y = SCALE_POINT_Y - INPUT_SHIFT
-
-        if (SCALE_POINT_Y < 0) then
-            local small_shift = -SCALE_POINT_Y
-            START_Y = START_Y + small_shift
-            END_Y = END_Y + small_shift
-            SCALE_POINT_Y = 0
+        SHIP_POSITION.y = SHIP_POSITION.y - INPUT_SHIFT
+        if SHIP_POSITION.y < SHIP_BOUNDS.y1 then
+            SHIP_POSITION.y = SHIP_BOUNDS.y1
         end
     end
 
     if DOWN_DOWN then
-        START_Y = START_Y + INPUT_SHIFT
-        END_Y = END_Y + INPUT_SHIFT
-        SCALE_POINT_Y = SCALE_POINT_Y + INPUT_SHIFT
-
-        if (SCALE_POINT_Y > MAX_Y) then
-            local small_shift = SCALE_POINT_Y - MAX_Y
-            START_Y = START_Y - small_shift
-            END_Y = END_Y - small_shift
-            SCALE_POINT_Y = MAX_Y
+        SHIP_POSITION.y = SHIP_POSITION.y + INPUT_SHIFT
+        if SHIP_POSITION.y > SHIP_BOUNDS.y2 then
+            SHIP_POSITION.y = SHIP_BOUNDS.y2
         end
     end
 
@@ -358,7 +424,13 @@ function pd.update()
     DrawStars(STARS)
 
     -- Finally, we draw the fractals.
+    pdgfx.setDrawOffset(Lerp(200, SHIP_POSITION.x, -0.1) - 200,
+        Lerp(120, SHIP_POSITION.y, -0.1) - 120)
     KochClipOutliers(START_X, START_Y, END_X, END_Y, INITIAL_DEPTH)
+    pdgfx.setDrawOffset(0, 0)
+
+    DrawShip()
+    ShipParticles()
 end
 
 init()
