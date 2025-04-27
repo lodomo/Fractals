@@ -1,4 +1,4 @@
-import "scripts/lodomo/imports"
+import "CoreLibs/graphics"
 
 local pd = playdate
 local pdgfx <const> = pd.graphics
