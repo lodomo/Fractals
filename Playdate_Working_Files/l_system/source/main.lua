@@ -6,10 +6,8 @@ local pdgfx <const> = pd.graphics          -- Get the playdate SDK graphics tabl
 local DrawLine = pdgfx.drawLine            -- Make drawline a local function, for speed
 local DrawCircle = pdgfx.fillCircleAtPoint -- Make fillCircleAtPoint a local function, for speed
 
-
-
 -- Global Settings
-DEPTH = 12
+DEPTH = 8
 
 DRAW_WIDTH = 380
 DRAW_HEIGHT = 220
@@ -161,18 +159,69 @@ local function Fern()
     RULES.F = "FF"
 end
 
+local function JaggedCoast()
+    THETA = 90 * math.pi / 180
+    D_THETA = 25 * math.pi / 180
+    AXIOM = "A"
+    RULES.A = "C+A+B"
+    RULES.B = "A-B-C"
+    RULES.C = "B+C-A"
+end
+
+
+local function SpaceIslands()
+    -- Looks coolest at depth 10
+    THETA = 0 * math.pi / 180
+    D_THETA = 90 * math.pi / 180
+    AXIOM = "A"
+    RULES.A = "C+A+B"
+    RULES.B = "A-B-C"
+    RULES.C = "B+C-A"
+end
+
+local function Vines()
+    THETA = 0 * math.pi / 180
+    D_THETA = 42 * math.pi / 180
+    AXIOM = "VXNXMX"
+    RULES.V = "N+"
+    RULES.X = "[+M]-N"
+    RULES.N = "X+E"
+    RULES.E = "NX-"
+end
+
+
+
+local function DrawIt()
+    for i = 2, #SCALED_PATH do
+        if SCALED_PATH[i][1] ~= PEN_UP and SCALED_PATH[i][2] ~= PEN_UP then
+            DrawLine(SCALED_PATH[i - 1][1], SCALED_PATH[i - 1][2], SCALED_PATH[i][1], SCALED_PATH[i][2])
+        end
+    end
+end
+
+
 
 local function init()
     -- SquareWave()
     --Sierpinski()
-    Dragon()
+    -- Dragon()
     -- Fern()
+    -- JaggedCoast()
+    -- SpaceIslands()
+    Vines()
     Builder()
     Interpreter()
     ScaleAndOffset()
     pdgfx.setColor(pdgfx.kColorBlack)
 end
 
+---[[ Just draw it
+function pd.update()
+    DrawIt()
+end
+--]]
+
+--[[ Draw it with a pen
 function pd.update()
     pd.drawFPS(0, 0)
     TICKS = pd.getCrankTicks(180)
@@ -196,5 +245,6 @@ function pd.update()
         end
     end
 end
+--]]
 
 init()

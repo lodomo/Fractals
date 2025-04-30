@@ -35,6 +35,9 @@ local LAST_TICK = 0
 local TICKS = 0
 local SHRINKING = false
 local STARS = {}
+local STAR_HOLDER = nil
+local WARP_COOLDOWN <const> = 15
+local WARP_TICKS = 0
 
 -- THE SHIP!
 local SHIP_TILES = pdgfx.imagetable.new("images/ship")
@@ -50,7 +53,7 @@ local SHIP_PARTICLES = {}
 
 -- Music
 local music = pd.sound.sampleplayer.new("sounds/themoon.wav")
-music:play()
+music:play(0)
 
 local function init()
     pdgfx.setClipRect(0, 0, 400, 240)
@@ -256,17 +259,55 @@ function DrawStars(stars)
     end
 end
 
+function DrawWarpSpeed(stars1, stars2)
+    for i = 1, #stars1 do
+        local star1 = stars1[i]
+        local star2 = stars2[i]
+
+        pdgfx.setColor(pdgfx.kColorWhite)
+        pdgfx.drawLine(star1.x, star1.y, star2.x, star2.y)
+    end
+end
+
 function ScaleStars(stars, scale)
     for _, star in ipairs(stars) do
         star.x = Lerp(200, star.x, scale)
         star.y = Lerp(120, star.y, scale)
+    end
+end
 
-        -- If the star is out of bounds or too close to the middle
+function LerpTrails(stars1, stars2, t)
+    for i = 1, #stars1 do
+        stars2[i].x = Lerp(stars2[i].x, stars1[i].x, t)
+        stars2[i].y = Lerp(stars2[i].y, stars1[i].y, t)
+    end
+end
+
+function CleanupStars(stars)
+    for _, star in ipairs(stars) do
         if star.x > 650 or star.y > 650 or star.x < -250 or star.y < -250 or
             (math.abs(star.x - 200) < 10 and
                 math.abs(star.y - 120) < 10) then
             star.x = math.random(0, MAX_X)
             star.y = math.random(0, MAX_Y)
+        end
+    end
+end
+
+function CleanupWarpStars(stars1, stars2)
+    for i = 1, #stars1 do
+        local star1 = stars1[i]
+        local star2 = stars2[i]
+
+        if star1.x > 650 or star1.y > 650 or star1.x < -250 or star1.y < -250 or
+            (math.abs(star1.x - 200) < 10 and
+                math.abs(star1.y - 120) < 10) then
+            tempx = math.random(0, MAX_X)
+            tempy = math.random(0, MAX_Y)
+            star1.x = tempx
+            star1.y = tempy
+            star2.x = tempx
+            star2.y = tempy
         end
     end
 end
@@ -291,7 +332,6 @@ function DrawShip()
 end
 
 function ShipParticles()
-    -- 10 Percent change a particle spawns at origin
     local x = SHIP_POSITION.x + math.random(-10, 10)
     local y = SHIP_POSITION.y + math.random(-10, 10)
     table.insert(SHIP_PARTICLES, { x = x, y = y, age = 0 })
@@ -303,14 +343,23 @@ function ShipParticles()
         if particle.age > 50 then
             table.remove(SHIP_PARTICLES, i)
         else
-            pdgfx.setColor(pdgfx.kColorWhite)
             particle.x = particle.x + math.random(-1, 1)
             particle.y = particle.y + math.random(-1, 1)
             local x_offset = Lerp(200, SHIP_POSITION.x, 1) - 200
             local y_offset = Lerp(120, SHIP_POSITION.y, 1) - 120
             local magnitude = math.sqrt((x_offset * x_offset) + (y_offset * y_offset))
-            x_offset = x_offset / magnitude * 3
-            y_offset = y_offset / magnitude * 3
+
+            -- Fix when the ship is at 200, 120 dead center
+            if x_offset ~= 0 then
+                x_offset = x_offset / magnitude * 4
+            end
+
+            if y_offset ~= 0 then
+                y_offset = y_offset / magnitude * 4
+            else
+                y_offset = 1
+            end
+
             particle.x = particle.x + x_offset
             particle.y = particle.y + y_offset
             pdgfx.fillRect(particle.x, particle.y, 2 + particle.age / 5, 2 + particle.age / 5)
@@ -327,8 +376,9 @@ function pd.update()
         SHRINKING = true
     end
 
-    pdgfx.clear()
     local scale = 1.005
+    local warp_scale = 1.004
+    local warp_scale2 = 1.06
     local base_length = math.sqrt((END_X - START_X) * (END_X - START_X) + (END_Y - START_Y) * (END_Y - START_Y))
 
     if B_DOWN then
@@ -345,6 +395,9 @@ function pd.update()
         END_X = x2 * cos - y2 * sin + SCALE_POINT_X
         END_Y = x2 * sin + y2 * cos + SCALE_POINT_Y
         RotateStars(STARS, 0.25 * angle)
+        if STAR_HOLDER then
+            RotateStars(STAR_HOLDER, 0.25 * angle)
+        end
     end
 
     scale = scale + (1 * TICKS / 360)
@@ -410,17 +463,38 @@ function pd.update()
     END_X = Lerp(SCALE_POINT_X, END_X, scale)
     END_Y = Lerp(SCALE_POINT_Y, END_Y, scale)
 
+    -- DRAWING
     -- Draw the screen black
-    pdgfx.setColor(pdgfx.kColorBlack)
-    pdgfx.fillRect(0, 0, 400, 240)
+    --pdgfx.fillRect(0, 0, 400, 240)
 
+    ScaleStars(STARS, scale)
+
+    pdgfx.clear(pdgfx.kColorBlack)
     pdgfx.setColor(pdgfx.kColorWhite)
 
-    if scale > 1 then
-        ScaleStars(STARS, 1.001 * scale)
+    if TICKS > 0 then
+        if STAR_HOLDER == nil then
+            STAR_HOLDER = {}
+            for i, star in ipairs(STARS) do
+                STAR_HOLDER[i] = { x = star.x, y = star.y }
+            end
+        end
+        CleanupWarpStars(STARS, STAR_HOLDER)
+        LerpTrails(STARS, STAR_HOLDER, 0.01)
+        DrawWarpSpeed(STARS, STAR_HOLDER)
+    else
+        if STAR_HOLDER == nil then
+            CleanupStars(STARS)
+        else
+            WARP_TICKS = WARP_TICKS + 1
+            LerpTrails(STARS, STAR_HOLDER, 2 / WARP_COOLDOWN)
+            DrawWarpSpeed(STARS, STAR_HOLDER)
+            if WARP_TICKS > WARP_COOLDOWN then
+                STAR_HOLDER = nil
+                WARP_TICKS = 0
+            end
+        end
     end
-
-
     DrawStars(STARS)
 
     -- Finally, we draw the fractals.
